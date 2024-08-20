@@ -1,16 +1,53 @@
 import config from "../config/config";
 import { Client, Account, ID } from "appwrite";
 
-const client = new Client()
-    .setEndpoint('https://cloud.appwrite.io/v1') // Your API Endpoint
-    .setProject();               // Your project ID
+export class AuthService{
+    client=new Client();
+    account;
+    constructor(){
+        this.client
+        .setEndpoint(config.appwriteUrl)
+        .setProject(config.appwriteProjectId);
+        this.account=new Account(this.client);
 
-const account = new Account(client);
+    }
+    async createAccount({email,password,name}){
+        try {
+            const userAccount = await this.account.create(ID.unique(),email,password);
+            if(userAccount){
+                    return this.login();
+            }else{
+                console.log("cant create the account");
+            }
 
-const promise = account.create('[USER_ID]', 'email@example.com', '');
+        } catch (error) {
+            throw error;
+        }
 
-promise.then(function (response) {
-    console.log(response); // Success
-}, function (error) {
-    console.log(error); // Failure
-});
+    }
+    async login({email,password}){
+        try {
+            return await this.account.createEmailSession(email,password);
+        } catch (error) {
+            throw error;
+        }
+    }
+    async getCurrentUser(){
+        try {
+            return await this.account.get();
+        } catch (error) {
+            console.log("Appwrite error : GetCurrentUser : ",error);
+            
+        }
+    }
+    async logout(){
+        try {
+            await this.account.deleteSessions();
+        } catch (error) {
+            console.log("Appwrite service :: logout :: ",error);            
+        }
+    }
+}
+const authService=new AuthService();
+export default authService;
+
